@@ -1,3 +1,6 @@
+
+import cProfile
+import pstats
 import random
 from board import Board
 from monte_carlo import monte_carlo_search
@@ -35,6 +38,7 @@ def play_game(algorithm1, algorithm2):
         
         result = board.get_result()
         if result is not None:
+            print(f"Game result: {result}")
             return result
         
         board.switch_player()
@@ -71,10 +75,10 @@ def print_results(results):
 if __name__ == '__main__':
     algorithms = {
         "UR": URAlgorithm(),
-        "PMCGS(500)": PMCGSAlgorithm(500),
-        "PMCGS(10000)": PMCGSAlgorithm(10000),
-        "UCT(500)": UCTAlgorithm(500),
-        "UCT(10000)": UCTAlgorithm(10000)
+        "PMCGS(500)": PMCGSAlgorithm(10),
+        "PMCGS(10000)": PMCGSAlgorithm(10),
+        "UCT(500)": UCTAlgorithm(10),
+        "UCT(10000)": UCTAlgorithm(10)
     }
     
     results = run_tournament(algorithms)
