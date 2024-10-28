@@ -1,6 +1,7 @@
 from typing import List
 
 class Board:
+
     def __init__(self, grid: List[List[str]], player: str):
         self.grid = grid
         self.player = player
@@ -17,42 +18,44 @@ class Board:
                 return True
         return False
     
-    def has_winner(self):
-        # check horizontal win
-        for row in range(self.rows):
-            for col in range(self.cols - 3):
-                if (self.grid[row][col] != 'O' and
-                    all(self.grid[row][col] == self.grid[row][col + i] for i in range(4))):
-                    return self.grid[row][col]
-        
-        # checks vertical win
-        for row in range(self.rows - 3):
-            for col in range(self.cols):
-                if (self.grid[row][col] != 'O' and
-                    all(self.grid[row][col] == self.grid[row + i][col] for i in range(4))):
-                    return self.grid[row][col]
-        
-        # check diagonal
-        for row in range(self.rows - 3):
-            for col in range(self.cols - 3):
-                if (self.grid[row][col] != 'O' and
-                    all(self.grid[row + i][col + i] == self.grid[row][col] for i in range(4))):
-                    return self.grid[row][col]
-                
-                if (self.grid[row + 3][col] != 'O' and
-                    all(self.grid[row + 3 - i][col + i] == self.grid[row + 3][col] for i in range(4))):
-                    return self.grid[row + 3][col]
-        
-        return None
+    def has_winner(self, piece: str) -> bool:
+        # Check horizontal locations for win
+        for c in range(self.cols - 3):
+            for r in range(self.rows):
+                if (self.grid[r][c] == piece and self.grid[r][c+1] == piece and
+                    self.grid[r][c+2] == piece and self.grid[r][c+3] == piece):
+                    return True
+
+        # Check vertical locations for win
+        for c in range(self.cols):
+            for r in range(self.rows - 3):
+                if (self.grid[r][c] == piece and self.grid[r+1][c] == piece and
+                    self.grid[r+2][c] == piece and self.grid[r+3][c] == piece):
+                    return True
+
+        # Check positively sloped diagonals
+        for c in range(self.cols - 3):
+            for r in range(self.rows - 3):
+                if (self.grid[r][c] == piece and self.grid[r+1][c+1] == piece and
+                    self.grid[r+2][c+2] == piece and self.grid[r+3][c+3] == piece):
+                    return True
+
+        # Check negatively sloped diagonals
+        for c in range(self.cols - 3):
+            for r in range(3, self.rows):
+                if (self.grid[r][c] == piece and self.grid[r-1][c+1] == piece and
+                    self.grid[r-2][c+2] == piece and self.grid[r-3][c+3] == piece):
+                    return True
+
+        return False
     
     def is_full(self):
         return all(cell != 'O' for cell in self.grid[0])
     
     def get_result(self):
-        winner = self.has_winner()
-        if winner == 'R':
+        if self.has_winner('R'):
             return -1
-        elif winner == 'Y':
+        elif self.has_winner('Y'):
             return 1
         elif self.is_full():
             return 0
@@ -63,3 +66,4 @@ class Board:
     
     def copy(self):
         return Board([row[:] for row in self.grid], self.player)
+    
