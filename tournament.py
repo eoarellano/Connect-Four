@@ -72,9 +72,9 @@ if __name__ == '__main__':
     algorithms = {
         "UR": URAlgorithm(),
         "PMCGS(500)": PMCGSAlgorithm(500),
-        "PMCGS(10000)": PMCGSAlgorithm(10000),
+        "PMCGS(10000)": PMCGSAlgorithm(1000),
         "UCT(500)": UCTAlgorithm(500),
-        "UCT(10000)": UCTAlgorithm(10000)
+        "UCT(10000)": UCTAlgorithm(1000)
     }
     
     results = run_tournament(algorithms)
