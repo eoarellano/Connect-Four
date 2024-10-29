@@ -11,21 +11,24 @@ def ucb_value(node: Node, parent_visits: int, exploration_constant: float = 1.41
     exploration_value = exploration_constant * math.sqrt(math.log(parent_visits) / node.visits) if parent_visits > 0 else 0  
     return exploitation_value + exploration_value
 
-def uct_search(board: Board, simulations: int, verbose: bool):
+def uct_search(board: Board, simulations: int, verbose: bool = False):
     root = Node()
     initial_player = board.player
 
     for i in range(simulations):
         current = root
-        current_board = board.copy()
         node_path = []
+        last_move = (-1, -1)
 
         # SELECTION AND EXPANSION
         while True:
-            if current_board.get_result() is not None:
+            result = board.get_result(last_move)  # Cache the result
+            if result is not None:
+                if verbose:
+                    print(f"Selection terminated with result: {result}")
                 break
 
-            valid_moves = current_board.get_valid_moves()
+            valid_moves = board.get_valid_moves()
             unexplored = [m for m in valid_moves if m not in current.children]
 
             # Expand if unexplored moves exist
@@ -34,8 +37,8 @@ def uct_search(board: Board, simulations: int, verbose: bool):
                 new_node = Node(move)
                 new_node.parent = current
                 current.children[move] = new_node
-                current_board.make_move(move)
-                node_path.append(new_node)
+                last_move = board.make_move(move)
+                node_path.append((new_node, last_move))
                 if verbose:
                     print("NODE ADDED")
                 break
@@ -46,10 +49,10 @@ def uct_search(board: Board, simulations: int, verbose: bool):
             # Select the move with the highest UCB value
             move = max(ucb_values, key=ucb_values.get)
 
-            current_board.make_move(move)
+            last_move = board.make_move(move)
             current = current.children[move]
-            node_path.append(current)
-            current_board.switch_player()
+            node_path.append((current, last_move))
+            board.switch_player()
 
             if verbose:
                 print(f"wi: {current.wins}")
@@ -60,25 +63,27 @@ def uct_search(board: Board, simulations: int, verbose: bool):
                 print(f"Move selected: {move + 1}")
 
         # SIMULATION (Rollout)
-        sim_board = current_board.copy()
-        while sim_board.get_result() is None:
-            moves = sim_board.get_valid_moves()
+        sim_last_move = last_move
+        while board.get_result(sim_last_move) is None:
+            moves = board.get_valid_moves()
             move = random.choice(moves) if moves else None
             if move is not None:
-                sim_board.make_move(move)
-                sim_board.switch_player()
+                sim_last_move = board.make_move(move)
+                board.switch_player()
 
-        result = sim_board.get_result()
+        result = board.get_result(sim_last_move)
         if verbose:
             print(f"TERMINAL NODE VALUE: {result}")
 
         # BACKPROPAGATION
-        for node in reversed(node_path):
+        for node, move in reversed(node_path):
             node.visits += 1
             if (result == 1 and initial_player == 'Y') or (result == -1 and initial_player == 'R'):
                 node.wins += 1
             if verbose:
                 print(f"Updated values: \n wi: {node.wins} \n ni: {node.visits}")
+            board.undo_move(move)
+            board.switch_player()
 
     # FINAL MOVE SELECTION AND OUTPUT
     moves_values = {}
