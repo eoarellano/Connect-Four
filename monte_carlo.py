@@ -1,6 +1,6 @@
 import random
 from board import Board
-from Node import Node
+from node import Node
 
 def monte_carlo_search(board: Board, simulations: int, verbose: bool):
     root = Node()
@@ -8,14 +8,15 @@ def monte_carlo_search(board: Board, simulations: int, verbose: bool):
 
     for i in range(simulations):
         current = root
-        current_board = board.copy()
         node_path = []
+        last_move = (-1, -1)
 
         while True:
-            if current_board.get_result() is not None:
+            result = board.get_result(last_move)
+            if result is not None:
                 break
 
-            valid_moves = current_board.get_valid_moves()
+            valid_moves = board.get_valid_moves()
             if not valid_moves:
                 break
 
@@ -31,46 +32,45 @@ def monte_carlo_search(board: Board, simulations: int, verbose: bool):
                 new_node = Node(move)
                 new_node.parent = current
                 current.children[move] = new_node
-                current_board.make_move(move)
+                last_move = board.make_move(move)
                 if verbose:
                     print("NODE ADDED")
-                node_path.append(new_node)
+                node_path.append((new_node, last_move))
                 break
             
             move = random.choice(list(current.children.keys()))
-            current_board.make_move(move)
+            last_move = board.make_move(move)
             current = current.children[move]
-            node_path.append(current)
-            current_board.switch_player()
+            node_path.append((current, last_move))
+            board.switch_player()
 
-        # sim
-        sim_board = current_board.copy()
-        while sim_board.get_result() is None:
-            moves = sim_board.get_valid_moves()
-            if not moves:
-                break
-            move = random.choice(moves)
-            sim_board.make_move(move)
-            if verbose:
-                print(f"Move selected: {move}")
-            sim_board.switch_player()
+        # SIMULATION (Rollout)
+        sim_last_move = last_move
+        while board.get_result(sim_last_move) is None:
+            moves = board.get_valid_moves()
+            move = random.choice(moves) if moves else None
+            if move is not None:
+                sim_last_move = board.make_move(move)
+                board.switch_player()
 
-        result = sim_board.get_result()
+        result = board.get_result(sim_last_move)
         if verbose:
             print(f"TERMINAL NODE VALUE: {result}")
 
-        # backpropagation
+        # BACKPROPAGATION
         if verbose:
             print("Updated values:")
-        for node in reversed(node_path):
+        for node, move in reversed(node_path):
             node.visits += 1
             if (result == 1 and initial_player == 'Y') or (result == -1 and initial_player == 'R'):
                 node.wins += 1
             if verbose:
                 print(f"wi: {node.wins}")
                 print(f"ni: {node.visits}")
+            board.undo_move(move)
+            board.switch_player()
 
-    # selects the best move
+    # Select the best move
     moves_values = {}
     for col in range(7):
         if col in root.children:
